@@ -6,4 +6,4 @@ pytorch-lightning
 jupyter
 matplotlib
 pillow
-openvc-python
+opencv-python
