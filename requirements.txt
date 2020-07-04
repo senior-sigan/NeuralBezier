@@ -7,3 +7,9 @@ jupyter
 matplotlib
 pillow
 opencv-python
+
+# dev
+mypy
+wemake-python-styleguide
+autopep8
+isort
