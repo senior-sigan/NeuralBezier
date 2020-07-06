@@ -1,11 +1,13 @@
 import numpy as np
 import pytorch_lightning as pl
 import torch
+from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.nn import functional as F
 from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
 from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -15,14 +17,17 @@ from neural_bezier.dataset import BezierDataset, random_canvas
 
 
 class CNNDrawerLM(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, hparams: DictConfig):
         super().__init__()
-        self.n_demo_images = 16
-        self.batch_size = 8
-        self.num_workers = 4
-        self.image_size = 128
+        # self.hparams = hparams
+        self.n_demo_images = hparams.n_demo_images
+        self.n_batches_per_epoch = hparams.n_batches_per_epoch
+        self.batch_size = hparams.batch_size
+        self.num_workers = hparams.num_workers
+        self.image_size = hparams.image_size
+        self.dataset_seed = hparams.dataset_seed
 
-        self.lr = 0.001
+        self.lr = hparams.learning_rate
 
         self.model = CNNDrawer()
 
@@ -38,16 +43,19 @@ class CNNDrawerLM(pl.LightningModule):
         }}
 
     def configure_optimizers(self) -> Optimizer:
-        return Adam(self.model.parameters(), self.lr)
+        optimizer = Adam(self.model.parameters(), self.lr)
+        # scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
+        # return [optimizer], [scheduler]
+        return optimizer
 
     def train_dataloader(self) -> DataLoader:
         transform = transforms.Compose([
             transforms.ToTensor()
         ])
         dataset = BezierDataset(
-            length=self.batch_size * 8,
+            length=self.batch_size * self.n_batches_per_epoch,
             image_transform=transform,
-            size=self.image_size, seed=42
+            size=self.image_size, seed=self.dataset_seed
         )
         return DataLoader(
             dataset=dataset,
@@ -65,30 +73,26 @@ class CNNDrawerLM(pl.LightningModule):
         params = np.stack(params, axis=0)
         canvas = np.stack(canvas)
 
-        params = torch.from_numpy(params)
-        gen_canvas = self.forward(params)
+        params = torch.from_numpy(params).to(device=self.device)
+        gen_canvas = self.forward(params).detach().cpu().numpy()
 
         for i in range(self.n_demo_images):
-            self.logger.experiment.add_image(f"canvas_{i}/generated", gen_canvas[i], self.current_epoch,
-                                             dataformats='CHW')
-            self.logger.experiment.add_image(f"canvas_{i}/origin", canvas[i], self.current_epoch,
-                                             dataformats='HW')
+            grid = np.concatenate([gen_canvas[i].squeeze(), canvas[i]], axis=1)
+            self.logger.experiment.add_image(f"canvas_{i}", grid, self.current_epoch, dataformats='HW')
 
 
-def main():
-    model = CNNDrawerLM()
+def train(config: DictConfig):
+    model = CNNDrawerLM(config)
     trainer = Trainer(
-        val_check_interval=2,
+        max_epochs=config.epochs,
         checkpoint_callback=ModelCheckpoint(
-            filepath='output/checkpoints'
+            filepath='checkpoints',
+            save_last=True
         ),
         logger=TensorBoardLogger(
-            save_dir='output/logs',
-
-        )
+            save_dir='logs'
+        ),
+        gpus=config.gpus,
+        distributed_backend='ddp'
     )
     trainer.fit(model)
-
-
-if __name__ == '__main__':
-    main()

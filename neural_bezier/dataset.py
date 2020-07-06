@@ -22,15 +22,17 @@ class BezierDataset(Dataset):
                  size: int = 128, seed: int = 42) -> None:
         self.size = size
         self.rs = RandomState(seed=seed)
-        self.image_transform = image_transform or (lambda x: x)
-        self.params_transform = params_transform or (lambda x: x)
+        self.image_transform = image_transform
+        self.params_transform = params_transform
         assert length > 0, 'Length should be > 0'
         self.length = length
 
     def __getitem__(self, index: int) -> (np.ndarray, np.ndarray):
         params, canvas = random_canvas(size=self.size, random_state=self.rs)
-        params = self.params_transform(params)
-        canvas = self.image_transform(canvas)
+        if self.params_transform is not None:
+            params = self.params_transform(params)
+        if self.image_transform is not None:
+            canvas = self.image_transform(canvas)
         return params, canvas
 
     def __len__(self) -> int:
