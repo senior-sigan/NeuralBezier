@@ -10,10 +10,16 @@ def normal(points: Tuple[float, ...], width: int) -> Tuple[float, ...]:
     return tuple(p_.astype(np.int))
 
 
+def draw_params(params, *, size: int = 256, debug: bool = False) -> np.ndarray:
+    return draw(p0=params[0:2], p1=params[2:4], p2=params[4:6],
+                radius=params[6:8], color=params[8:10],
+                size=size, debug=debug)
+
+
 def draw(p0: Tuple[float, float], p1: Tuple[float, float], p2: Tuple[float, float],
          radius: Tuple[float, float], color: Tuple[float, float],
          *, size: int = 256, debug: bool = False) -> np.ndarray:
-    """Draws a quadratic Bezier curve on a grayscale canvas and returns it as a numpy array.
+    r"""Draws a quadratic Bezier curve on a grayscale canvas and returns it as a numpy array.
 
     It uses circles with the radius to draw the curve.
     Color and Radius is a simple linear gradient.
@@ -32,7 +38,7 @@ def draw(p0: Tuple[float, float], p1: Tuple[float, float], p2: Tuple[float, floa
         debug (bool, optional): Draw or not P0, P1, P2 on the canvas. Defaults to False.
 
     Returns:
-        np.ndarray: grayscale square image with dims:(size, size)
+        np.ndarray: grayscale square image with values in [0,255], dims=(size, size), dtype=np.uint8
     """
     x0, y0 = normal(p0, size * 2)
     x1, y1 = normal(p1, size * 2)

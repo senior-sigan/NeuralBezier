@@ -2,6 +2,7 @@ numpy
 torch
 torchvision
 pytorch-lightning
+torchsummary
 
 jupyter
 matplotlib
