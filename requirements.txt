@@ -8,8 +8,7 @@ jupyter
 matplotlib
 pillow
 opencv-python
-omegaconf>=2.0.0
-hydra-core --pre #  hierarchical configuration
+hydra-core #  hierarchical configuration
 
 # dev
 mypy
