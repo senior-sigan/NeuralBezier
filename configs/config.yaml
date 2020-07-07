@@ -1,0 +1,11 @@
+output: "./output"
+n_demo_images: 16
+epochs: 100
+batch_size: 64
+learning_rate: 0.0001
+n_batches_per_epoch: 1024
+n_batches_val: 128
+gpus: 2
+num_workers: 16
+image_size: 128
+seed: 42

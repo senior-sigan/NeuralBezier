@@ -1,6 +1,24 @@
-venv/
 .idea
-.cahce
+.cahce/
 .ipynb_checkpoints
-*.pyc
-output
+outputs/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
