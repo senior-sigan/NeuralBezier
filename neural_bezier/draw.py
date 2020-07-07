@@ -71,4 +71,4 @@ def draw(p0: Tuple[float, float], p1: Tuple[float, float], p2: Tuple[float, floa
         cv2.circle(img=canvas, center=(int(x), int(y)),
                    radius=int(r), color=int(c), thickness=cv2.FILLED)
 
-    return cv2.resize(src=canvas, dsize=(size, size)).astype(np.uint8)
+    return (255 - cv2.resize(src=canvas, dsize=(size, size))).astype(np.uint8)

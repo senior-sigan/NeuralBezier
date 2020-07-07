@@ -12,7 +12,7 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from neural_bezier.cnn_model import CNNDrawer
+from neural_bezier.cnn_model import CNNDrawer, CNNDrawer2
 from neural_bezier.dataset import BezierDataset, BezierDatasetStatic
 
 
@@ -29,7 +29,7 @@ class CNNDrawerLM(pl.LightningModule):
 
         self.lr = hparams.learning_rate
 
-        self.model = CNNDrawer()
+        self.model = CNNDrawer2()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model.forward(x)
@@ -54,7 +54,7 @@ class CNNDrawerLM(pl.LightningModule):
 
     def configure_optimizers(self) -> Optimizer:
         optimizer = Adam(self.model.parameters(), self.lr)
-        scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
+        scheduler = StepLR(optimizer, step_size=15, gamma=0.1)
         return [optimizer], [scheduler]
 
     def train_dataloader(self) -> DataLoader:
@@ -111,13 +111,12 @@ def train(config: DictConfig):
     model = CNNDrawerLM(config)
     trainer = Trainer(
         fast_dev_run=False,
-        track_grad_norm=2,
-        log_gpu_memory=True,
-        weights_summary='full',
         max_epochs=config.epochs,
         checkpoint_callback=ModelCheckpoint(
-            filepath='checkpoints',
-            save_last=True
+            filepath='checkpoints_{epoch:02d}-{val_loss:.2f}',
+            save_last=True,
+            monitor='val_loss',
+            mode='min'
         ),
         logger=TensorBoardLogger(
             save_dir='logs'
