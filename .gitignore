@@ -1,2 +1,6 @@
 venv/
 .idea
+.cahce
+.ipynb_checkpoints
+*.pyc
+output
