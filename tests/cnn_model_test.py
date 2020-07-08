@@ -2,12 +2,13 @@ import unittest
 
 import torch
 
-from neural_bezier.cnn_model import CNNDrawer, CNNDrawer2, Up
+from neural_bezier.models import CNNDrawerV1, CNNDrawerV2
+from neural_bezier.models.cnn_drawer_v2 import Up
 
 
 class CNNDrawerTest(unittest.TestCase):
     def test_forward(self):
-        model = CNNDrawer()
+        model = CNNDrawerV1()
         batch_size = 32
         parameters = 10  # number of params from draw function
         x = torch.zeros(batch_size, parameters, dtype=torch.float32)
@@ -18,7 +19,7 @@ class CNNDrawerTest(unittest.TestCase):
         self.assertEqual(size, y.size())
 
     def test_forward2(self):
-        model = CNNDrawer2()
+        model = CNNDrawerV2()
         batch_size = 32
         parameters = 10  # number of params from draw function
         x = torch.zeros(batch_size, parameters, dtype=torch.float32)
@@ -31,6 +32,6 @@ class CNNDrawerTest(unittest.TestCase):
     def test_up(self):
         up = Up(4, 8)
         batch_size = 32
-        x = torch.randn(batch_size, 4,  8, 8)
+        x = torch.randn(batch_size, 4, 8, 8)
         y = up(x)
         self.assertEqual((batch_size, 8, 16, 16), y.shape)

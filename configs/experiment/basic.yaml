@@ -1,0 +1,6 @@
+experiment:
+  name: basic
+  generator:
+    name: CNNDrawerV2
+    optimizer:
+      learning_rate: 0.003

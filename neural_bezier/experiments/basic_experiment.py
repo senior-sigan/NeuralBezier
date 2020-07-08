@@ -4,7 +4,6 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from omegaconf import DictConfig, OmegaConf
-from torch import nn
 from torch.nn import functional as F
 from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR, _LRScheduler
@@ -27,9 +26,9 @@ class BasicExperiment(pl.LightningModule):
         self.num_workers = config.training.num_workers
         self.image_size = config.dataset.image_size
 
-        self.lr = config.optimizer.learning_rate
+        self.lr = config.experiment.generator.optimizer.learning_rate
 
-        self.model = get_model(config)
+        self.model = get_model(config.experiment.generator.name, config)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model.forward(x)
@@ -45,12 +44,17 @@ class BasicExperiment(pl.LightningModule):
         x, y = batch
         logits = self.forward(x)
         val_loss = F.mse_loss(logits, y)
-        return {'val_loss': val_loss}
+        l1_loss = F.l1_loss(logits, y)
+        return {'val_loss': val_loss, 'l1_loss': l1_loss}
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        tensorboard_logs = {'val_loss': avg_loss}
-        return {'val_loss': avg_loss, 'log': tensorboard_logs}
+        val_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        l1_loss = torch.stack([x['l1_loss'] for x in outputs]).mean()
+        tensorboard_logs = {'val_loss': val_loss, 'l1_loss': l1_loss}
+        return {
+            **tensorboard_logs,
+            'log': tensorboard_logs
+        }
 
     def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         optimizer = Adam(self.model.parameters(), self.lr)

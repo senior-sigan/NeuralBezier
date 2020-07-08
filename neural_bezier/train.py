@@ -11,7 +11,7 @@ def train(config: DictConfig):
     pl.seed_everything(config.seed)
     lm = get_experiment(config)
     trainer = Trainer(
-        fast_dev_run=True,
+        fast_dev_run=False,
         max_epochs=config.training.epochs,
         checkpoint_callback=ModelCheckpoint(
             filepath='checkpoints_{epoch:02d}-{val_loss:.2f}',

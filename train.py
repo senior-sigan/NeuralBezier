@@ -2,7 +2,7 @@ import os
 
 import hydra
 
-from neural_bezier.cnn_model_train import train
+from neural_bezier.train import train
 
 
 @hydra.main(config_path='configs/config.yaml', strict=True)
