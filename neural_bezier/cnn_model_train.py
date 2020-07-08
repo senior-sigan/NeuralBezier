@@ -1,35 +1,38 @@
+from typing import List, Tuple
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
+from torch import nn
 from torch.nn import functional as F
 from torch.optim import Adam
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, _LRScheduler
 from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from neural_bezier.cnn_model import CNNDrawer, CNNDrawer2
 from neural_bezier.dataset import BezierDataset, BezierDatasetStatic
+from neural_bezier.models import get_model
 
 
-class CNNDrawerLM(pl.LightningModule):
-    def __init__(self, hparams: DictConfig):
+class SimpleDrawerLM(pl.LightningModule):
+    def __init__(self, model: nn.Module, config: DictConfig):
         super().__init__()
-        self.hparams = hparams.to_container()
-        self.n_demo_images = hparams.n_demo_images
-        self.n_batches_per_epoch = hparams.n_batches_per_epoch
-        self.n_batches_val = hparams.n_batches_val
-        self.batch_size = hparams.batch_size
-        self.num_workers = hparams.num_workers
-        self.image_size = hparams.image_size
+        self.hparams = OmegaConf.to_container(config, resolve=True)
+        self.n_demo_images = config.training.n_demo_images
+        self.n_batches_per_epoch = config.dataset.n_batches_per_epoch
+        self.n_batches_val = config.dataset.n_batches_val
+        self.batch_size = config.training.batch_size
+        self.num_workers = config.training.num_workers
+        self.image_size = config.dataset.image_size
 
-        self.lr = hparams.learning_rate
+        self.lr = config.optimizer.learning_rate
 
-        self.model = CNNDrawer2()
+        self.model = model
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model.forward(x)
@@ -52,7 +55,7 @@ class CNNDrawerLM(pl.LightningModule):
         tensorboard_logs = {'val_loss': avg_loss}
         return {'val_loss': avg_loss, 'log': tensorboard_logs}
 
-    def configure_optimizers(self) -> Optimizer:
+    def configure_optimizers(self) -> Tuple[List[Optimizer], List[_LRScheduler]]:
         optimizer = Adam(self.model.parameters(), self.lr)
         scheduler = StepLR(optimizer, step_size=15, gamma=0.1)
         return [optimizer], [scheduler]
@@ -97,7 +100,7 @@ class CNNDrawerLM(pl.LightningModule):
             canvas.append(canvas_)
 
         params = np.stack(params, axis=0)
-        canvas = torch.stack(canvas, axis=0)
+        canvas = torch.stack(canvas)
 
         params = torch.from_numpy(params).to(device=self.device)
         gen_canvas = self.forward(params).detach().cpu().numpy()
@@ -108,10 +111,11 @@ class CNNDrawerLM(pl.LightningModule):
 
 def train(config: DictConfig):
     pl.seed_everything(config.seed)
-    model = CNNDrawerLM(config)
+    model = get_model(config)
+    lm = SimpleDrawerLM(model, config)
     trainer = Trainer(
-        fast_dev_run=False,
-        max_epochs=config.epochs,
+        fast_dev_run=True,
+        max_epochs=config.training.epochs,
         checkpoint_callback=ModelCheckpoint(
             filepath='checkpoints_{epoch:02d}-{val_loss:.2f}',
             save_last=True,
@@ -121,7 +125,7 @@ def train(config: DictConfig):
         logger=TensorBoardLogger(
             save_dir='logs'
         ),
-        gpus=config.gpus,
+        gpus=config.training.gpus,
         distributed_backend='ddp'
     )
-    trainer.fit(model)
+    trainer.fit(lm)

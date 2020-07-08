@@ -1,11 +1,20 @@
 output: "./output"
-n_demo_images: 16
-epochs: 40
-batch_size: 64
-learning_rate: 0.003
-n_batches_per_epoch: 1024
-n_batches_val: 512
-gpus: 2
-num_workers: 16
-image_size: 128
 seed: 42
+
+optimizer:
+  learning_rate: 0.003
+
+model:
+  name: CNNDrawerV2
+
+training:
+  epochs: 40
+  batch_size: 64
+  gpus: 0
+  num_workers: 16
+  n_demo_images: 16
+
+dataset:
+  n_batches_per_epoch: 1024
+  n_batches_val: 512
+  image_size: 128
