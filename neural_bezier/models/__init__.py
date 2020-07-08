@@ -13,8 +13,9 @@ MODELS: Dict[str, nn.Module] = {
 
 
 def get_model(config: DictConfig) -> nn.Module:
-    model_factory = MODELS.get(config.model.name)
-    if model_factory is None:
-        raise NotImplementedError(f"Model {config.model.name} not found. May be you mean one of them: {MODELS.keys()}")
+    key = config.experiment.model.name
+    factory = MODELS.get(key)
+    if factory is None:
+        raise NotImplementedError(f"Model {key} is not found. May be you mean one of them: {MODELS.keys()}")
 
-    return model_factory()
+    return factory()

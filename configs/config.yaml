@@ -1,11 +1,13 @@
 output: "./output"
 seed: 42
 
+experiment:
+  name: basic
+  model:
+    name: CNNDrawerV2
+
 optimizer:
   learning_rate: 0.003
-
-model:
-  name: CNNDrawerV2
 
 training:
   epochs: 40
